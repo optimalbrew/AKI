@@ -154,7 +154,7 @@ Why the difference? (exactly by 1 day)?
 Because they are counting calendar days, not days completed. Admitted on 3rd, discharged on 5th is a 3-day stay, not a 2-day (5-3) one. 
 """
 
-# Example, pt id 13
+# Example, pt row 13
 df.loc[13,'date_of_hospital_discharge_v2'] - df.loc[13,'date_of_icu_admission_v2'] #i.e. Timestamp('2015-11-11 00:00:00') - Timestamp('2015-11-06 00:00:00')
 # Timedelta('5 days 00:00:00')
 df.loc[13,'hospital_length_of_stay_v2']
@@ -211,46 +211,78 @@ df['Max_Lab_Val_TS_7'] = df.apply(lambda _: '', axis=1)
 df['Specimen_1_TS'] = df.apply(lambda _: '', axis=1) #this one simply to store the string as a timestamp (for use in excel)
 
 
-for row in range(5): #(1047 rows in file)
+
+
+ #test for missing specimens
+df[pd.isna(df.SPECIMN_TAKEN_TIME_1)==True].shape[0] # should be 0 i.e. not missing. Should exist for all rows   
+
+for row in range(1047): #(1047 rows in file)
     #print('\n\n\n\nFor row ' + str(row))
+    #day first specimen taken, which may not be the same as admission
     df.loc[row, 'Specimen_1_TS'] = datetime.strptime(df.loc[row, 'SPECIMN_TAKEN_TIME_1'],'%d%b%Y:%H:%M:%S')
     # initialize
-    last_specimen_index = 0
-    specTime = df.loc[row, 'SPECIMN_TAKEN_TIME_'+str(last_specimen_index + 1)]
-    last_spec_time = datetime.strptime(specTime , '%d%b%Y:%H:%M:%S')
+    first_specimen_time = datetime.strptime(df.loc[row, 'SPECIMN_TAKEN_TIME_1'], '%d%b%Y:%H:%M:%S')
+    #define a variable to keep track of latest value seen
+    last_spec_time = first_specimen_time #for now this is just the specimen 1 time 
+    last_specimen_index = 1 #readings are 1-indexed, not 0-indexed
+    #collect max values for up to the first 7 days of admission
     for days in range(7):
-        tsList = [] # collection of lab value readings that fit time range in the while loop
-        maxRead = 0 # init max reading
+        #tsList = [] # collection of lab value readings that fit time range in the while loop
+        maxRead = 0 # init max reading for each day to 0
         #print('Day '+ str(days + 1)) #for testing
-        while last_spec_time < df.loc[row,'date_of_icu_admission_v2']+timedelta(days=1)*(days+1):
+        while last_spec_time.date() == first_specimen_time.date()+timedelta(days=1)*days:
             if last_specimen_index <21: #'21' => columns beyond lab reading 21 deleted from second version of data set (file2.xlsx)
-                specTime = df.loc[row, 'SPECIMN_TAKEN_TIME_'+str(last_specimen_index + 1)]
+                specTime = df.loc[row, 'SPECIMN_TAKEN_TIME_'+str(last_specimen_index)]
                 if pd.isna(specTime): # no such timestamp
                     #print('breaking away') #for testing
                     break
                 elif pd.notna(specTime): #there is a reading
                     last_spec_time = datetime.strptime(specTime , '%d%b%Y:%H:%M:%S')
                     #update current max
-                    tmpMax = df.loc[row,'LAB_VALUE_'+str(last_specimen_index + 1)]
+                    tmpMax = df.loc[row,'LAB_VALUE_'+str(last_specimen_index)]
                     if tmpMax > maxRead:
                         maxRead = tmpMax
                         df.loc[row,'Max_Lab_Val_'+str(days+1)] = maxRead
                         df.loc[row,'Max_Lab_Val_TS_'+str(days+1)] = last_spec_time
-                        tsList.append(df.loc[row,'LAB_VALUE_'+str(last_specimen_index + 1)])
+                        #tsList.append(df.loc[row,'LAB_VALUE_'+str(last_specimen_index)])
                         #tsList #for testing
                 last_specimen_index += 1
+                tmptime = df.loc[row, 'SPECIMN_TAKEN_TIME_'+str(last_specimen_index)]
+                if pd.notna(tmptime):
+                    last_spec_time = datetime.strptime(df.loc[row, 'SPECIMN_TAKEN_TIME_'+str(last_specimen_index)], '%d%b%Y:%H:%M:%S')
+                else:
+                    break
             else:
                 #print('Index exceed 21')
                 break
 
-""" # After running above
-df.loc[:10,[ 'Max_Lab_Val_1', 'Max_Lab_Val_TS_1',
-             'Max_Lab_Val_2', 'Max_Lab_Val_TS_2', 
-             'Max_Lab_Val_3', 'Max_Lab_Val_TS_3',
-             'Max_Lab_Val_4', 'Max_Lab_Val_TS_4',
-             'Max_Lab_Val_5', 'Max_Lab_Val_TS_5',
-             'Max_Lab_Val_6', 'Max_Lab_Val_TS_6',
-             'Max_Lab_Val_7', 'Max_Lab_Val_TS_7',]] """
+
+##Testing
+df.loc[33:37, ['SPECIMN_TAKEN_TIME_1','LAB_VALUE_1',
+             'SPECIMN_TAKEN_TIME_2','LAB_VALUE_2',
+             'SPECIMN_TAKEN_TIME_3','LAB_VALUE_3',
+             'SPECIMN_TAKEN_TIME_4','LAB_VALUE_4',
+             'SPECIMN_TAKEN_TIME_5','LAB_VALUE_5',
+             'SPECIMN_TAKEN_TIME_6','LAB_VALUE_6',
+             'SPECIMN_TAKEN_TIME_7','LAB_VALUE_7',
+             'SPECIMN_TAKEN_TIME_8','LAB_VALUE_8',
+             'SPECIMN_TAKEN_TIME_9','LAB_VALUE_9',
+             'SPECIMN_TAKEN_TIME_10','LAB_VALUE_10',
+             'SPECIMN_TAKEN_TIME_11','LAB_VALUE_11',
+             'SPECIMN_TAKEN_TIME_12','LAB_VALUE_12',
+             'SPECIMN_TAKEN_TIME_13','LAB_VALUE_13',
+             'SPECIMN_TAKEN_TIME_14','LAB_VALUE_14',
+             'SPECIMN_TAKEN_TIME_15','LAB_VALUE_15',
+             'Max_Lab_Val_TS_1' ,'Max_Lab_Val_1', 
+             'Max_Lab_Val_TS_2' ,'Max_Lab_Val_2',
+             'Max_Lab_Val_TS_3' ,'Max_Lab_Val_3', 
+             'Max_Lab_Val_TS_4' ,'Max_Lab_Val_4', 
+             'Max_Lab_Val_TS_5' ,'Max_Lab_Val_5',
+             'Max_Lab_Val_TS_6' ,'Max_Lab_Val_6', 
+             'Max_Lab_Val_TS_7' ,'Max_Lab_Val_7' ]].T
+
+
+
 
 
 # Export to excel
