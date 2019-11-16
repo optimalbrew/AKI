@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 
 # Read input
 xlsx = pd.ExcelFile('./kGFR_file2.xlsx')
-df = pd.read_excel(xlsx, 'Wide_GFR_PT_ID', index_col = None, na_values=['.'])
+df = pd.read_excel(xlsx, 'Wide_GFR_PT_ID', index_col = None, na_values=['.']) #nrows = 10
 
 df.shape
 df.head()
@@ -194,23 +194,34 @@ timeDiff > timedelta(hours=36)
 
 
 ## Initialize columns for max lab readings and timestamps for up to 7 days
-df['Max_Lab_Val_1'] = df.apply(lambda _: '', axis=1)
-df['Max_Lab_Val_TS_1'] = df.apply(lambda _: '', axis=1)
-df['Max_Lab_Val_2'] = df.apply(lambda _: '', axis=1)
-df['Max_Lab_Val_TS_2'] = df.apply(lambda _: '', axis=1)
-df['Max_Lab_Val_3'] = df.apply(lambda _: '', axis=1)
-df['Max_Lab_Val_TS_3'] = df.apply(lambda _: '', axis=1)
-df['Max_Lab_Val_4'] = df.apply(lambda _: '', axis=1)
-df['Max_Lab_Val_TS_4'] = df.apply(lambda _: '', axis=1)
-df['Max_Lab_Val_5'] = df.apply(lambda _: '', axis=1)
-df['Max_Lab_Val_TS_5'] = df.apply(lambda _: '', axis=1)
-df['Max_Lab_Val_6'] = df.apply(lambda _: '', axis=1)
-df['Max_Lab_Val_TS_6'] = df.apply(lambda _: '', axis=1)
-df['Max_Lab_Val_7'] = df.apply(lambda _: '', axis=1)
-df['Max_Lab_Val_TS_7'] = df.apply(lambda _: '', axis=1)
+# df['Max_Lab_Val_1'] = df.apply(lambda _: '', axis=1)
+# df['Max_Lab_Val_TS_1'] = df.apply(lambda _: '', axis=1)
+# df['Max_Lab_Val_2'] = df.apply(lambda _: '', axis=1)
+# df['Max_Lab_Val_TS_2'] = df.apply(lambda _: '', axis=1)
+# df['Max_Lab_Val_3'] = df.apply(lambda _: '', axis=1)
+# df['Max_Lab_Val_TS_3'] = df.apply(lambda _: '', axis=1)
+# df['Max_Lab_Val_4'] = df.apply(lambda _: '', axis=1)
+# df['Max_Lab_Val_TS_4'] = df.apply(lambda _: '', axis=1)
+# df['Max_Lab_Val_5'] = df.apply(lambda _: '', axis=1)
+# df['Max_Lab_Val_TS_5'] = df.apply(lambda _: '', axis=1)
+# df['Max_Lab_Val_6'] = df.apply(lambda _: '', axis=1)
+# df['Max_Lab_Val_TS_6'] = df.apply(lambda _: '', axis=1)
+# df['Max_Lab_Val_7'] = df.apply(lambda _: '', axis=1)
+# df['Max_Lab_Val_TS_7'] = df.apply(lambda _: '', axis=1)
+
+# One shot addition of new columns for readings (7 days) instead of above
+numdays = list('1234567')
+newCols = [] #initialize
+emptyVals = []
+for d in numdays:
+    newCols.append('Max_Lab_Val_'+d)
+    emptyVals.append('')
+    newCols.append('Max_Lab_Val_TS_'+d)
+    emptyVals.append('')    
+#create the new columns, initialized to ''
+df[newCols] = df.apply(lambda _ : pd.Series(emptyVals,index=newCols) ,axis=1)
+# Add in the initial specimen time
 df['Specimen_1_TS'] = df.apply(lambda _: '', axis=1) #this one simply to store the string as a timestamp (for use in excel)
-
-
 
 
  #test for missing specimens
