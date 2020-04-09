@@ -1,2 +1,2 @@
 # AKI
-AKI related
+Scripts related to partner's research on kidney disease
